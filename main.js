@@ -42,9 +42,16 @@ function createWindow() {
     frame: false, show: false, alwaysOnTop: true,
     skipTaskbar: true, transparent: true, resizable: false,
     // autoplayPolicy: AudioContext must run without a user gesture (we trigger from a hotkey)
-    webPreferences: { nodeIntegration: true, contextIsolation: false, autoplayPolicy: 'no-user-gesture-required' },
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true, nodeIntegration: false, sandbox: true,
+      autoplayPolicy: 'no-user-gesture-required',
+    },
   });
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  // The player is a single local page: never navigate away or open new windows.
+  win.webContents.on('will-navigate', e => e.preventDefault());
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('console-message', (_, _l, m) => console.log('[r]', m));
   win.on('blur', () => { if (!activeText) win.hide(); });
 
@@ -193,9 +200,11 @@ ipcMain.on('control', (_, action) => {
 });
 
 // Voice / rate changes from the player UI — applied to subsequent generate() calls.
+// Only accept the voices and speeds the player offers.
+const VOICES = ['af_heart', 'af_bella', 'af_nicole', 'am_michael', 'am_fenrir', 'am_puck', 'bf_emma', 'bm_george'];
 ipcMain.on('config', (_, c) => {
-  if (c.voice) voice = c.voice;
-  if (c.rate) rate = c.rate;
+  if (VOICES.includes(c?.voice)) voice = c.voice;
+  if (typeof c?.rate === 'number' && c.rate >= 0.5 && c.rate <= 2) rate = c.rate;
 });
 
 app.on('before-quit', () => globalShortcut.unregisterAll());

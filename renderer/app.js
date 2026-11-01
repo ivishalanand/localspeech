@@ -8,7 +8,6 @@
 // Speed + voice are NOT applied here — they're sent to main via 'config' and baked
 // into synthesis (Kokoro's `speed` = tempo change at natural pitch). So playback is
 // always 1.0x: no resampling, no chipmunk pitch.
-const { ipcRenderer } = require('electron');
 
 let audioCtx = null, source = null;
 let paused = false;
@@ -20,14 +19,14 @@ let chunkDur = 0, startCtx = 0, rafId = 0, lastIdx = -1;
 const $ = id => document.getElementById(id);
 
 // Re-trigger the entrance fade each time the player is (re)shown.
-ipcRenderer.on('reveal', () => {
+ls.on('reveal', () => {
   const el = $('player');
   el.classList.remove('reveal');
   void el.offsetWidth;            // force reflow so the animation restarts
   el.classList.add('reveal');
 });
 
-ipcRenderer.on('audio', (_, { samples, sampleRate, text }) => {
+ls.on('audio', ({ samples, sampleRate, text }) => {
   if (!audioCtx || audioCtx.state === 'closed') audioCtx = new AudioContext();
   if (paused) { audioCtx.resume(); paused = false; $('pp').textContent = '⏸'; }
 
@@ -41,7 +40,7 @@ ipcRenderer.on('audio', (_, { samples, sampleRate, text }) => {
   source = audioCtx.createBufferSource();
   source.buffer = buf;
   source.connect(audioCtx.destination);
-  source.onended = () => ipcRenderer.send('playback-ended');
+  source.onended = () => ls.send('playback-ended');
   startCtx = audioCtx.currentTime;
   source.start();
   runHighlight();
@@ -146,9 +145,9 @@ $('stop').onclick = () => {
   track.textContent = '—';
   track.style.transform = 'translateX(0)';
   wordEls = []; wordCenterPx = []; lastIdx = -1;
-  ipcRenderer.send('control', 'stop');
+  ls.send('control', 'stop');
 };
 
 // Speed + voice take effect on the next chunk synthesized by main.
-$('speed').onchange = e => ipcRenderer.send('config', { rate: parseFloat(e.target.value) });
-$('voice').onchange = e => ipcRenderer.send('config', { voice: e.target.value });
+$('speed').onchange = e => ls.send('config', { rate: parseFloat(e.target.value) });
+$('voice').onchange = e => ls.send('config', { voice: e.target.value });
