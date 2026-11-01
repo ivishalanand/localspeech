@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --accent: #ffd60a;
+      --panel: rgba(28, 28, 30, 0.82);
+    }
+
+    html, body { height: 100%; background: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      color: #fff;
+      overflow: hidden;
+      user-select: none;
+      padding: 6px;                       /* room for the panel's drop shadow */
+    }
+
+    /* Frosted panel */
+    #player {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--panel);
+      backdrop-filter: blur(30px) saturate(180%);
+      -webkit-backdrop-filter: blur(30px) saturate(180%);
+      border: 0.5px solid rgba(255, 255, 255, 0.16);
+      border-radius: 17px;
+      box-shadow: 0 10px 34px rgba(0, 0, 0, 0.44), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+      -webkit-app-region: drag;
+      animation: reveal 0.19s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    #player.reveal { animation: reveal 0.19s cubic-bezier(0.22, 1, 0.36, 1); }
+
+    @keyframes reveal {
+      from { opacity: 0; transform: translateY(7px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Teleprompter viewport: a single line. The active word is pinned at the
+       horizontal center (focal point); the track slides so it stays put. Edge
+       gradient fades words in/out instead of hard-clipping. */
+    #text {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      white-space: nowrap;
+      font-size: 19px;
+      letter-spacing: 0.01em;
+      color: rgba(255, 255, 255, 0.5);        /* non-focal words (both sides, symmetric) */
+      -webkit-mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
+              mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
+    }
+
+    #track {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      will-change: transform;
+      /* No CSS transition: position is driven continuously per-frame in app.js,
+         so the text glides smoothly instead of hopping word-to-word. */
+    }
+
+    /* Constant box (no padding/weight change) → no reflow; color-only transition */
+    .word {
+      padding: 1px 4px;
+      margin: 0 -1px;
+      border-radius: 6px;
+      transition: color 0.12s ease;
+    }
+    .word.active {
+      background-color: var(--accent);
+      color: #1a1a1a;
+    }
+
+    #controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    button, select {
+      background: rgba(255, 255, 255, 0.12);
+      border: 0.5px solid rgba(255, 255, 255, 0.14);
+      color: #fff;
+      border-radius: 9px;
+      height: 31px;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+    button {
+      width: 34px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    button:hover, select:hover { background: rgba(255, 255, 255, 0.2); }
+    button:active { background: rgba(255, 255, 255, 0.09); }
+
+    select { font-size: 12px; padding: 0 6px; }
+    select#voice { flex: 1; min-width: 0; }
+    select option { background: #222; }
+  </style>
+</head>
+<body>
+  <div id="player" class="reveal">
+    <div id="text"><div id="track">—</div></div>
+    <div id="controls">
+      <button id="pp" title="Pause / Resume">⏸</button>
+      <button id="stop" title="Stop">⏹</button>
+      <select id="voice" title="Voice">
+        <option value="af_heart" selected>Heart · US ♀</option>
+        <option value="af_bella">Bella · US ♀</option>
+        <option value="af_nicole">Nicole · US ♀</option>
+        <option value="am_michael">Michael · US ♂</option>
+        <option value="am_fenrir">Fenrir · US ♂</option>
+        <option value="am_puck">Puck · US ♂</option>
+        <option value="bf_emma">Emma · UK ♀</option>
+        <option value="bm_george">George · UK ♂</option>
+      </select>
+      <select id="speed" title="Speed">
+        <option value="0.75">0.75×</option>
+        <option value="1" selected>1×</option>
+        <option value="1.25">1.25×</option>
+        <option value="1.5">1.5×</option>
+        <option value="2">2×</option>
+      </select>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
